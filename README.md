@@ -20,4 +20,5 @@ numpy
 colormath
 opencv-python
 
-drive pix2pix: https://drive.google.com/drive/folders/1UrDfBv9FmNMYtZXfsyN8Och-LwynouIt?usp=drive_link
+drive pix2pix: [https://drive.google.com/drive/folders/1UrDfBv9FmNMYtZXfsyN8Och-LwynouIt?usp=drive_link
+](https://drive.google.com/drive/folders/1aKURv3gLny29PhUYUtqTywfnj5xeQ7eA?usp=drive_link)
