@@ -11,14 +11,12 @@ Backend desenvolvido em FastAPI contendo:
 
 Instalar dependências:
 
-fastapi
-uvicorn
-torch
-torchvision
-pillow
-numpy
-colormath
-opencv-python
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip install fastapi
+pip install uvicorn
+pip install python-multipart
+pip install pillow
+
 
 drive pix2pix: [https://drive.google.com/drive/folders/1UrDfBv9FmNMYtZXfsyN8Och-LwynouIt?usp=drive_link
 ](https://drive.google.com/drive/folders/1aKURv3gLny29PhUYUtqTywfnj5xeQ7eA?usp=drive_link)
