@@ -1,28 +1,51 @@
 from fastapi import FastAPI, UploadFile, File
-from app.pipelines.pix2pix import run_pix2pix
-from app.pipelines.anomaly import calculate_anomaly
-from app.pipelines.gradcam import run_gradcam
+import uvicorn
+import os
+from app.services.pix2pix_inference import load_generator, run_pix2pix
+from fastapi import File, UploadFile
+from app.services.simple_classifier import classify_image
 
-app = FastAPI(title="Detecção de Anomalias em Folhas")
 
-@app.get("/")
-def root():
-    return {"message": "API funcionando! Envie imagens para análise."}
+app = FastAPI()
 
-@app.post("/reconstruir")
-async def reconstruir_folha(file: UploadFile = File(...)):
-    imagem_bytes = await file.read()
-    reconstruida = run_pix2pix(imagem_bytes)
-    return {"status": "ok", "mensagem": "Reconstrução feita", "resultado": reconstruida}
+# Carrega o modelo uma vez só
+netG = load_generator()
 
-@app.post("/anomalia")
-async def detectar_anomalia(file: UploadFile = File(...)):
-    imagem_bytes = await file.read()
-    resultado = calculate_anomaly(imagem_bytes)
-    return {"status": "ok", "anomalia": resultado}
+OUTPUT_DIR = "generated"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-@app.post("/gradcam")
-async def gradcam(file: UploadFile = File(...)):
-    imagem_bytes = await file.read()
-    heatmap = run_gradcam(imagem_bytes)
-    return {"status": "ok", "heatmap": heatmap}
+@app.get("/health")
+def health():
+    return {"status": "backend online"}
+
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    # Salvar imagem temporária
+    input_path = os.path.join(OUTPUT_DIR, "input_temp.jpg")
+    output_path = os.path.join(OUTPUT_DIR, "output_pix2pix.jpg")
+
+    with open(input_path, "wb") as f:
+        f.write(await file.read())
+
+    # Executar inferência
+    result_path = run_pix2pix(netG, input_path, output_path)
+
+    return {
+        "message": "Inferência concluída",
+        "output_image_path": result_path
+    }
+
+@app.post("/classify")
+async def classify(file: UploadFile = File(...)):
+
+    image_bytes = await file.read()
+    label, conf = classify_image(image_bytes)
+
+    return {
+        "classe": label,
+        "probabilidade": conf
+    }
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
