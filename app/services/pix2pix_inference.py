@@ -1,25 +1,34 @@
 import sys
 import os
-
-CYCLE_GAN_PATH = os.path.abspath(os.path.join(os.getcwd(), "pytorch-CycleGAN-and-pix2pix"))
-
-if CYCLE_GAN_PATH not in sys.path:
-    sys.path.append(CYCLE_GAN_PATH)
-
-from models.networks import define_G
 import torch
 from PIL import Image
 from torchvision import transforms
-import numpy as np
 
-# Caminho do checkpoint treinado
-CHECKPOINT_PATH = r"D:\IIA\Projeto 2\pytorch-CycleGAN-and-pix2pix\checkpoints\pix2pix_folhas\100_net_G.pth"
+# 1. SETUP PATHS DYNAMICALLY
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "..", ".."))
+CYCLE_GAN_DIR = os.path.join(PROJECT_ROOT, "pytorch-CycleGAN-and-pix2pix")
+CHECKPOINT_PATH = os.path.join(CYCLE_GAN_DIR, "checkpoints", "pix2pix_folhas", "100_net_G.pth")
+
+# 2. MANAGE IMPORTS
+if CYCLE_GAN_DIR not in sys.path:
+    sys.path.append(CYCLE_GAN_DIR)
+
+try:
+    from models.networks import define_G
+except ImportError as e:
+    raise ImportError(f"Could not import 'models.networks'. Checked path: {CYCLE_GAN_DIR}. Error: {e}")
 
 # ===== Carregar modelo Pix2Pix =====
 def load_generator():
-    # Importa o gerador do repositório do CycleGAN
-    from models.networks import define_G
+    if not os.path.exists(CHECKPOINT_PATH):
+        raise FileNotFoundError(
+            f"Checkpoint file not found!\n"
+            f"Expected location: {CHECKPOINT_PATH}\n"
+            f"Please ensure the 'checkpoints' folder is inside 'pytorch-CycleGAN-and-pix2pix'."
+        )
 
+    # REMOVED 'gpu_ids=[]' to fix the TypeError
     netG = define_G(
         input_nc=3,
         output_nc=3,
@@ -28,7 +37,8 @@ def load_generator():
         norm="batch",
         use_dropout=False,
         init_type="normal",
-        init_gain=0.02,
+        init_gain=0.02
+        # gpu_ids=[]  <-- Deleted this line
     )
 
     state_dict = torch.load(CHECKPOINT_PATH, map_location="cpu")
@@ -54,7 +64,7 @@ def run_pix2pix(netG, image_path: str, output_path: str):
     with torch.no_grad():
         fake = netG(img_t)[0]
 
-    # Dessormalizar e converter para imagem
+    # Desnormalizar e converter para imagem
     fake = (fake * 0.5 + 0.5).clamp(0, 1)
     fake_img = transforms.ToPILImage()(fake.cpu())
 
